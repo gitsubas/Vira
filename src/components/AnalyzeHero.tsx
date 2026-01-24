@@ -81,8 +81,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     outerContainer: {
-        width: 160,
-        height: 160,
+        width: 180,
+        height: 180,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -93,83 +93,71 @@ const styles = StyleSheet.create({
     disabled: {
         opacity: 0.5,
     },
-    // Subtle outer glow
+    // Subtle outer glow - enhanced
     outerGlow: {
         position: 'absolute',
+        width: 190,
+        height: 190,
+        borderRadius: 95,
+        backgroundColor: 'transparent',
+        shadowColor: '#fff',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.25,
+        shadowRadius: 30,
+    },
+    // Pure white ring - matching mockup
+    metallicRing: {
         width: 170,
         height: 170,
         borderRadius: 85,
-        backgroundColor: 'rgba(255, 255, 255, 0.03)',
-        shadowColor: '#fff',
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.1,
-        shadowRadius: 20,
-    },
-    // Main metallic ring
-    metallicRing: {
-        width: 150,
-        height: 150,
-        borderRadius: 75,
         overflow: 'hidden',
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#1a1a1a',
-        // Outer shadow for depth
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.5,
-        shadowRadius: 10,
-        elevation: 10,
+        backgroundColor: 'transparent',
+        borderWidth: 3,
+        borderColor: 'rgba(255, 255, 255, 0.9)',
+        // Subtle shadow for depth
+        shadowColor: '#fff',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.15,
+        shadowRadius: 15,
+        elevation: 8,
     },
-    // Top-left light gradient simulation
+    // Removed gradient layers - keeping for backwards compatibility but transparent
     ringGradientLight: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: '50%',
-        bottom: '50%',
-        backgroundColor: 'rgba(100, 100, 100, 0.4)',
-        borderTopLeftRadius: 75,
+        display: 'none',
     },
-    // Bottom-right dark gradient simulation
     ringGradientDark: {
-        position: 'absolute',
-        bottom: 0,
-        right: 0,
-        left: '50%',
-        top: '50%',
-        backgroundColor: 'rgba(30, 30, 30, 0.6)',
-        borderBottomRightRadius: 75,
+        display: 'none',
     },
-    // Inner highlight border
+    // Inner highlight border - subtle
     ringInnerBorder: {
         ...StyleSheet.absoluteFillObject,
-        borderRadius: 75,
+        borderRadius: 85,
         borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.15)',
-        borderTopColor: 'rgba(255, 255, 255, 0.3)',
-        borderLeftColor: 'rgba(255, 255, 255, 0.25)',
+        borderColor: 'rgba(255, 255, 255, 0.1)',
     },
-    // Inner white button
+    // Inner white button - larger
     innerButton: {
-        width: 105,
-        height: 105,
-        borderRadius: 52.5,
+        width: 120,
+        height: 120,
+        borderRadius: 60,
         backgroundColor: Colors.white,
         justifyContent: 'center',
         alignItems: 'center',
         // Inner shadow for depth
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.15,
-        shadowRadius: 6,
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
         elevation: 6,
     },
     label: {
         color: Colors.white,
-        fontSize: 18,
-        fontWeight: '500',
-        marginTop: 20,
-        letterSpacing: 0.3,
+        fontSize: 20,
+        fontWeight: '600',
+        marginTop: 24,
+        letterSpacing: 0.5,
     },
 });
+

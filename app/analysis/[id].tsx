@@ -59,12 +59,9 @@ export default function AnalysisResultScreen() {
         );
     }
 
-    // Determine score color based on value
-    const getScoreColor = (score: number) => {
-        if (score >= 80) return '#22C55E'; // Green
-        if (score >= 60) return '#EAB308'; // Yellow
-        return '#EF4444'; // Red
-    };
+    // Pure white for mockup accuracy - no color coding on gauge
+    const ringColor = 'rgba(255, 255, 255, 0.85)';
+    const scoreColor = Colors.white;
 
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
@@ -80,11 +77,11 @@ export default function AnalysisResultScreen() {
             </View>
 
             <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
-                {/* Score Gauge */}
+                {/* Score Gauge - Pure white ring per mockup */}
                 <View style={styles.scoreContainer}>
-                    <View style={[styles.scoreRing, { borderColor: getScoreColor(result.score) }]}>
-                        <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
-                        <Text style={[styles.scoreValue, { color: getScoreColor(result.score) }]}>
+                    <View style={[styles.scoreRing, { borderColor: ringColor }]}>
+                        <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
+                        <Text style={[styles.scoreValue, { color: scoreColor }]}>
                             {result.score}
                         </Text>
                     </View>
@@ -179,15 +176,15 @@ export default function AnalysisResultScreen() {
     );
 }
 
-// Insight card component
+// Insight card component - white checkmarks per mockup
 function InsightCard({ title, value, isGood }: { title: string; value: string; isGood: boolean }) {
     return (
         <View style={styles.insightCard}>
-            <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
+            <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill} />
             <View style={styles.insightCardBorder} />
             <View style={styles.insightContent}>
                 <Text style={styles.insightTitle}>{title}: {value}</Text>
-                <Check size={18} color={isGood ? '#22C55E' : '#EAB308'} />
+                <Check size={20} color={Colors.white} />
             </View>
         </View>
     );
@@ -231,49 +228,50 @@ const styles = StyleSheet.create({
     },
     scoreContainer: {
         alignItems: 'center',
-        paddingVertical: 32,
+        paddingVertical: 40,
     },
     scoreRing: {
-        width: 160,
-        height: 160,
-        borderRadius: 80,
+        width: 180,
+        height: 180,
+        borderRadius: 90,
         justifyContent: 'center',
         alignItems: 'center',
         overflow: 'hidden',
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-        borderWidth: 3,
+        backgroundColor: 'rgba(255, 255, 255, 0.03)',
+        borderWidth: 2,
     },
     scoreValue: {
-        fontSize: 56,
+        fontSize: 64,
         fontWeight: '700',
         zIndex: 1,
     },
     verdict: {
         color: Colors.white,
-        fontSize: 22,
+        fontSize: 24,
         fontWeight: '600',
-        marginTop: 16,
+        marginTop: 20,
+        letterSpacing: 0.5,
     },
     fileName: {
         color: Colors.textMuted,
-        fontSize: 13,
-        marginTop: 4,
+        fontSize: 14,
+        marginTop: 6,
     },
     insightsContainer: {
         gap: 12,
         marginBottom: 24,
     },
     insightCard: {
-        height: 56,
-        borderRadius: 16,
+        height: 60,
+        borderRadius: 18,
         overflow: 'hidden',
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        backgroundColor: 'rgba(255, 255, 255, 0.06)',
     },
     insightCardBorder: {
         ...StyleSheet.absoluteFillObject,
-        borderRadius: 16,
+        borderRadius: 18,
         borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.1)',
+        borderColor: 'rgba(255, 255, 255, 0.25)',
     },
     insightContent: {
         flex: 1,
@@ -285,7 +283,8 @@ const styles = StyleSheet.create({
     },
     insightTitle: {
         color: Colors.white,
-        fontSize: 16,
+        fontSize: 17,
+        fontWeight: '500',
     },
     section: {
         marginBottom: 24,
@@ -302,16 +301,17 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     keywordTag: {
-        paddingHorizontal: 14,
-        paddingVertical: 8,
-        borderRadius: 20,
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 22,
+        backgroundColor: 'rgba(255, 255, 255, 0.08)',
         borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.1)',
+        borderColor: 'rgba(255, 255, 255, 0.25)',
     },
     keywordText: {
         color: Colors.white,
-        fontSize: 13,
+        fontSize: 14,
+        fontWeight: '500',
     },
     improvementsList: {
         gap: 8,
@@ -333,17 +333,17 @@ const styles = StyleSheet.create({
         lineHeight: 20,
     },
     seoCard: {
-        height: 72,
-        borderRadius: 16,
+        height: 76,
+        borderRadius: 18,
         overflow: 'hidden',
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-        marginBottom: 16,
+        backgroundColor: 'rgba(255, 255, 255, 0.06)',
+        marginBottom: 20,
     },
     seoCardBorder: {
         ...StyleSheet.absoluteFillObject,
-        borderRadius: 16,
+        borderRadius: 18,
         borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.1)',
+        borderColor: 'rgba(255, 255, 255, 0.25)',
     },
     seoCardContent: {
         flex: 1,
@@ -355,13 +355,13 @@ const styles = StyleSheet.create({
     },
     seoTitle: {
         color: Colors.white,
-        fontSize: 16,
+        fontSize: 17,
         fontWeight: '600',
     },
     seoSubtitle: {
         color: Colors.textMuted,
-        fontSize: 13,
-        marginTop: 2,
+        fontSize: 14,
+        marginTop: 3,
     },
     copyButtonsRow: {
         flexDirection: 'row',
@@ -384,16 +384,17 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     primaryButton: {
-        height: 56,
-        borderRadius: 28,
+        height: 60,
+        borderRadius: 30,
         backgroundColor: Colors.white,
         justifyContent: 'center',
         alignItems: 'center',
     },
     primaryButtonText: {
         color: Colors.black,
-        fontSize: 17,
+        fontSize: 18,
         fontWeight: '600',
+        letterSpacing: 0.3,
     },
     // Error state
     errorContainer: {

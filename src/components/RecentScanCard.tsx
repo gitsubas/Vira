@@ -25,7 +25,7 @@ export function RecentScanCard({ score, title, thumbnail, onPress }: RecentScanC
             {/* Shadow wrapper for glow effect */}
             <View style={styles.glowWrapper}>
                 {/* Blur background for glass effect */}
-                <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
+                <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
 
                 {/* Glass base */}
                 <View style={styles.glassBase} />
@@ -53,67 +53,69 @@ export function RecentScanCard({ score, title, thumbnail, onPress }: RecentScanC
 
 const styles = StyleSheet.create({
     container: {
-        marginRight: 12,
-        // Outer shadow for glow effect
-        shadowColor: 'rgba(255, 255, 255, 0.15)',
+        marginRight: 14,
+        // Outer shadow for glow effect - enhanced
+        shadowColor: 'rgba(255, 255, 255, 0.25)',
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 1,
-        shadowRadius: 8,
-        elevation: 4,
+        shadowRadius: 12,
+        elevation: 6,
     },
     pressed: {
-        opacity: 0.8,
-        transform: [{ scale: 0.98 }],
+        opacity: 0.85,
+        transform: [{ scale: 0.97 }],
     },
     glowWrapper: {
-        width: 140,
-        height: 100,
-        borderRadius: 16,
+        width: 160,
+        height: 120,
+        borderRadius: 18,
         overflow: 'hidden',
-        backgroundColor: 'rgba(20, 20, 20, 0.6)',
+        backgroundColor: 'rgba(30, 30, 30, 0.5)',
     },
     glassBase: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
     },
     borderOverlay: {
         ...StyleSheet.absoluteFillObject,
-        borderRadius: 16,
-        borderWidth: 1.5,
-        borderColor: 'rgba(255, 255, 255, 0.2)',
-        // Top highlight
-        borderTopColor: 'rgba(255, 255, 255, 0.3)',
+        borderRadius: 18,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.35)',
+        // Top highlight - brighter
+        borderTopColor: 'rgba(255, 255, 255, 0.5)',
         zIndex: 10,
     },
     thumbnail: {
         ...StyleSheet.absoluteFillObject,
         width: '100%',
         height: '100%',
-        opacity: 0.5,
+        opacity: 0.7,
     },
     gradientOverlay: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(0, 0, 0, 0.25)',
+        backgroundColor: 'rgba(0, 0, 0, 0.2)',
     },
     content: {
         flex: 1,
         justifyContent: 'flex-end',
-        padding: 12,
+        padding: 14,
         zIndex: 5,
     },
     score: {
         color: Colors.white,
-        fontSize: 32,
+        fontSize: 38,
         fontWeight: '700',
-        lineHeight: 36,
+        lineHeight: 42,
         // Text shadow for depth
-        textShadowColor: 'rgba(0, 0, 0, 0.5)',
+        textShadowColor: 'rgba(0, 0, 0, 0.6)',
         textShadowOffset: { width: 0, height: 1 },
-        textShadowRadius: 3,
+        textShadowRadius: 4,
     },
     title: {
-        color: 'rgba(255, 255, 255, 0.7)',
-        fontSize: 11,
-        marginTop: 2,
+        color: 'rgba(255, 255, 255, 0.8)',
+        fontSize: 12,
+        fontWeight: '500',
+        marginTop: 3,
     },
 });
+
