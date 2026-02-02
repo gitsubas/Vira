@@ -1,148 +1,210 @@
-// (tabs)/index.tsx - Home Screen / Dashboard
-// Obsidian & Glass aesthetic: white logo, glassmorphism components
+// (tabs)/index.tsx - Home Screen
+// Updated for Theme Support
 
-import React from 'react';
-import { View, Text, ScrollView, Image, StyleSheet, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { AnalysisInput } from '../../src/types/analysis';
+
+import { View, Image, Text, ScrollView, Platform, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Link, Upload } from 'lucide-react-native';
+import { Camera, Link, Image as ImageIcon } from 'lucide-react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import * as ImagePicker from 'expo-image-picker';
+import { GlassView } from '../../src/components/GlassView';
 import { AnalyzeHero } from '../../src/components/AnalyzeHero';
 import { QuickAction } from '../../src/components/QuickAction';
 import { RecentScanCard } from '../../src/components/RecentScanCard';
+import { useAnalysisStore } from '../../src/store/useAnalysisStore';
+import { useThemeColors } from '../../src/hooks/useThemeColors';
 import { Colors } from '../../src/constants/Colors';
-import { pickMediaFromGallery, MediaAsset } from '../../src/services/MediaService';
-import { useAnalysisStore, useAnalysisHistory } from '../../src/store/useAnalysisStore';
-import { useSubscriptionStore } from '../../src/store/useSubscriptionStore';
-import { AnalysisInput } from '../../src/types/analysis';
+import { MetadataInput } from '../../src/components/MetadataInput';
+import { MetadataCard } from '../../src/components/MetadataCard';
 
 export default function HomeScreen() {
     const router = useRouter();
-    const startAnalysis = useAnalysisStore((state) => state.startAnalysis);
-    const { canPerformAnalysis, incrementUsage } = useSubscriptionStore();
+    // Map history to recentScans for compatibility with existing UI code
+    const { history: recentScans, setCurrentInput } = useAnalysisStore();
+    const { colors, isDark } = useThemeColors();
 
-    // Navigate to capture/upload screen
-    const handleAnalyze = () => {
-        router.push('/analysis');
-    };
+    // loadRecentScans is not needed as Zustand persist middleware handles hydration automatically
 
-    // Quick action: Paste video URL
-    const handlePasteLink = () => {
-        Alert.alert('Paste Link', 'URL analysis feature coming soon');
-    };
-
-    // Handle media selected -> check limits, start analysis, navigate
-    const handleMediaSelected = async (asset: MediaAsset) => {
-        // Check subscription limits before proceeding
-        const videoDuration = asset.type === 'video' ? asset.duration : undefined;
-        const { allowed, reason } = canPerformAnalysis(videoDuration);
-
-        if (!allowed) {
-            Alert.alert(
-                'Upgrade Required',
-                reason,
-                [
-                    { text: 'Cancel', style: 'cancel' },
-                    { text: 'Upgrade Now', onPress: () => router.push('/paywall') },
-                ]
-            );
-            return;
-        }
-
-        // Convert to AnalysisInput
-        const input: AnalysisInput = {
-            uri: asset.uri,
-            type: asset.type,
-            mimeType: asset.mimeType,
-            fileName: asset.fileName,
-            duration: asset.duration,
-            thumbnailUri: asset.thumbnailUri,
-        };
-
-        // Start analysis (runs in background)
-        startAnalysis(input)
-            .then(() => {
-                incrementUsage();
-            })
-            .catch((error) => {
-                console.error('Analysis failed:', error);
-            });
-
-        // Navigate to processing screen
+    // Pick media functionality (unchanged)
+    // Start analysis helper
+    const handleStartAnalysis = async (input: any) => {
+        const { startAnalysis } = useAnalysisStore.getState();
+        startAnalysis(input);
         router.push('/analysis/processing');
     };
 
-    // Quick action: Upload from gallery directly
-    const handleUpload = async () => {
-        const result = await pickMediaFromGallery();
-        if (result.success && result.asset) {
-            await handleMediaSelected(result.asset);
-        } else if (result.error && result.error !== 'Selection cancelled') {
-            Alert.alert('Error', result.error);
+    // Pick media functionality
+    const pickMedia = async (type: 'image' | 'video') => {
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: type === 'image'
+                ? ImagePicker.MediaTypeOptions.Images
+                : ImagePicker.MediaTypeOptions.Videos,
+            allowsEditing: true,
+            quality: 1,
+        });
+
+        if (!result.canceled) {
+            const asset = result.assets[0];
+            const input: AnalysisInput = {
+                uri: asset.uri,
+                type: type,
+                fileName: asset.fileName || `Start Analysis`,
+                mimeType: asset.mimeType || 'image/jpeg',
+                duration: asset.duration || undefined,
+            };
+            setCurrentInput(input);
+            handleStartAnalysis(input);
         }
     };
 
-    // View past analysis result
-    const handleViewResult = (id: string, title: string) => {
-        router.push(`/analysis/${id}`);
+    // Camera handling - Direct capture
+    const handleCamera = async () => {
+        const result = await ImagePicker.launchCameraAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+            allowsEditing: true,
+            quality: 1,
+        });
+
+        if (!result.canceled) {
+            const asset = result.assets[0];
+            const input: AnalysisInput = {
+                uri: asset.uri,
+                type: 'video',
+                fileName: `Captured Video`,
+                mimeType: asset.mimeType || 'video/mp4',
+                duration: asset.duration || undefined,
+            };
+            setCurrentInput(input);
+            handleStartAnalysis(input);
+        }
     };
 
-    const history = useAnalysisHistory();
-    const recentScans = history.slice(0, 5);
-    const hasRecentScans = recentScans.length > 0;
+
+
+    const handleViewResult = (id: string, title: string) => {
+        router.push({
+            pathname: '/analysis/[id]',
+            params: { id, title }
+        });
+    };
+
+    const logoSource = isDark
+        ? require('../../assets/images/viro_logo_white.png')
+        : require('../../assets/images/viro_logo.png');
 
     return (
-        <SafeAreaView style={styles.container} edges={['top']}>
-            {/* Header with Logo - white logo on black background */}
-            <View style={styles.header}>
-                <Image
-                    source={require('../../assets/images/viro_logo.png')}
-                    style={styles.logo}
-                    resizeMode="contain"
-                />
-            </View>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+            <ScrollView contentContainerStyle={styles.scrollContent}>
 
-            {/* Main Content */}
-            <View style={styles.content}>
-                {/* Hero Section - Centered */}
-                <View style={styles.heroSection}>
-                    <AnalyzeHero onPress={handleAnalyze} />
-
-                    {/* Quick Actions Row */}
-                    <View style={styles.quickActions}>
-                        <QuickAction icon={Link} label="Link" onPress={handlePasteLink} />
-                        <QuickAction icon={Upload} label="Upload" onPress={handleUpload} />
+                {/* Header */}
+                <View style={styles.header}>
+                    <Image
+                        source={logoSource}
+                        style={styles.logo}
+                        resizeMode="contain"
+                    />
+                    <View style={[
+                        styles.badge,
+                        {
+                            backgroundColor: colors.glassLight,
+                            borderColor: colors.glassBorder
+                        }
+                    ]}>
+                        <Text style={[styles.badgeText, { color: colors.textSecondary }]}>PRO</Text>
                     </View>
                 </View>
 
-                {/* Recent Scans Section */}
+                {/* Hero Section */}
+                <View style={styles.heroSection}>
+                    <AnalyzeHero onPress={handleCamera} />
+
+                    <View style={styles.quickActions}>
+                        <QuickAction
+                            icon={Link}
+                            label="Paste Link"
+                            onPress={() => { /* TODO */ }}
+                        />
+                        <QuickAction
+                            icon={ImageIcon}
+                            label="Upload"
+                            onPress={() => pickMedia('video')}
+                        />
+                    </View>
+
+                    {/* New Metadata Input */}
+                    <View style={styles.metadataSection}>
+                        <MetadataInput />
+                    </View>
+                </View>
+
+                {/* Recent Scans */}
+                {/* Recent Scans (Videos/Images) */}
                 <View style={styles.recentSection}>
-                    <Text style={styles.sectionTitle}>Recent Scans</Text>
+                    <View style={styles.sectionHeader}>
+                        <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Recent Scans</Text>
+                        <Pressable onPress={() => router.push('/history/scans')}>
+                            <Text style={[styles.viewAllText, { color: colors.viroPink }]}>View All</Text>
+                        </Pressable>
+                    </View>
+
                     <ScrollView
                         horizontal
                         showsHorizontalScrollIndicator={false}
                         contentContainerStyle={styles.recentList}
                     >
-                        {hasRecentScans ? (
-                            recentScans.map((scan) => (
-                                <RecentScanCard
-                                    key={scan.id}
-                                    score={scan.score}
-                                    title={scan.seo?.titles?.[0] || scan.input.fileName || 'Untitled Scan'}
-                                    thumbnail={scan.input.thumbnailUri ? { uri: scan.input.thumbnailUri } : (scan.input.type === 'image' ? { uri: scan.input.uri } : undefined)}
-                                    onPress={() => handleViewResult(scan.id, scan.seo?.titles?.[0] || scan.input.fileName || 'Scan Result')}
-                                />
+                        {recentScans.filter(s => s.input.type !== 'text').slice(0, 10).length > 0 ? (
+                            recentScans.filter(s => s.input.type !== 'text').slice(0, 10).map((scan) => (
+                                <View key={scan.id} style={{ marginRight: 20 }}>
+                                    <RecentScanCard
+                                        score={scan.score}
+                                        title={scan.seo?.titles?.[0] || scan.input.fileName || 'Untitled Scan'}
+                                        thumbnail={scan.input.thumbnailUri ? { uri: scan.input.thumbnailUri } : (scan.input.type === 'image' ? { uri: scan.input.uri } : undefined)}
+                                        onPress={() => handleViewResult(scan.id, scan.seo?.titles?.[0] || scan.input.fileName || 'Scan Result')}
+                                    />
+                                </View>
                             ))
                         ) : (
-                            <View style={styles.emptyCard}>
-                                <Text style={styles.emptyText}>No scans yet</Text>
-                                <Text style={styles.emptySubtext}>
-                                    Tap "Analyze Video" to get started
-                                </Text>
+                            <View style={[styles.emptyCard, { backgroundColor: colors.glassLight, borderColor: colors.glassBorder }]}>
+                                <Text style={[styles.emptyText, { color: colors.textMuted }]}>No recent scans</Text>
                             </View>
                         )}
                     </ScrollView>
                 </View>
-            </View>
+
+                {/* Recent Metadata (Text) */}
+                <View style={styles.recentSection}>
+                    <View style={styles.sectionHeader}>
+                        <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Recent Metadata</Text>
+                        <Pressable onPress={() => router.push('/history/metadata')}>
+                            <Text style={[styles.viewAllText, { color: colors.viroPink }]}>View All</Text>
+                        </Pressable>
+                    </View>
+
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.recentList}
+                    >
+                        {recentScans.filter(s => s.input.type === 'text').slice(0, 10).length > 0 ? (
+                            recentScans.filter(s => s.input.type === 'text').slice(0, 10).map((scan) => (
+                                <View key={scan.id} style={{ marginRight: 20 }}>
+                                    <MetadataCard
+                                        score={scan.score}
+                                        title={scan.input.fileName || scan.input.text || 'Untitled'}
+                                        onPress={() => handleViewResult(scan.id, scan.input.fileName || 'Result')}
+                                    />
+                                </View>
+                            ))
+                        ) : (
+                            <View style={[styles.emptyCard, { backgroundColor: colors.glassLight, borderColor: colors.glassBorder }]}>
+                                <Text style={[styles.emptyText, { color: colors.textMuted }]}>No recent metadata</Text>
+                            </View>
+                        )}
+                    </ScrollView>
+                </View>
+
+            </ScrollView>
         </SafeAreaView>
     );
 }
@@ -150,65 +212,79 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: Colors.black,
+    },
+    scrollContent: {
+        paddingBottom: 40,
     },
     header: {
-        paddingHorizontal: 20,
-        paddingTop: 8,
-        paddingBottom: 16,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 24,
+        paddingTop: 12,
     },
     logo: {
-        width: 36,
-        height: 36,
-        tintColor: 'white',
+        width: 80,
+        height: 32,
     },
-    content: {
-        flex: 1,
-        paddingHorizontal: 20,
+    badge: {
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 12,
+        borderWidth: 1,
+    },
+    badgeText: {
+        fontSize: 12,
+        fontWeight: '600',
+        letterSpacing: 1,
     },
     heroSection: {
-        flex: 1,
-        justifyContent: 'center',
         alignItems: 'center',
-        paddingBottom: 60,
+        marginTop: 40,
+        marginBottom: 20,
     },
     quickActions: {
         flexDirection: 'row',
-        marginTop: 44,
-        gap: 16,
+        marginTop: 40,
+        gap: 24,
+    },
+    metadataSection: {
+        width: '100%',
+        marginTop: 48,
+        marginBottom: 20,
     },
     recentSection: {
-        paddingBottom: 24,
+        paddingBottom: 40,
+    },
+    sectionHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 24,
+        marginBottom: 20,
     },
     sectionTitle: {
-        color: Colors.white,
-        fontSize: 15,
+        fontSize: 18,
         fontWeight: '500',
-        marginBottom: 14,
+    },
+    viewAllText: {
+        fontSize: 14,
+        fontWeight: '600',
     },
     recentList: {
-        paddingRight: 20,
+        paddingHorizontal: 24,
+        paddingRight: 24,
     },
     emptyCard: {
-        width: 200,
-        height: 100,
-        borderRadius: 16,
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        width: 210,
+        height: 150,
+        borderRadius: 24,
         borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.12)',
-        padding: 16,
-        alignItems: 'center',
+        borderStyle: 'dashed',
         justifyContent: 'center',
+        alignItems: 'center',
     },
     emptyText: {
-        color: Colors.white,
         fontSize: 14,
-        fontWeight: '500',
-    },
-    emptySubtext: {
-        color: Colors.textMuted,
-        fontSize: 12,
-        marginTop: 6,
-        textAlign: 'center',
     },
 });

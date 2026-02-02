@@ -87,7 +87,7 @@ export async function captureVideo(): Promise<MediaPickerResult> {
 
         // Launch camera in video mode
         const result = await ImagePicker.launchCameraAsync({
-            mediaTypes: ['videos'],
+            mediaTypes: ImagePicker.MediaTypeOptions.Videos,
             allowsEditing: true,
             quality: 1,
             videoMaxDuration: 600, // 10 minutes max
@@ -140,7 +140,7 @@ export async function capturePhoto(): Promise<MediaPickerResult> {
         }
 
         const result = await ImagePicker.launchCameraAsync({
-            mediaTypes: ['images'],
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
             allowsEditing: true,
             quality: 0.9,
         });
@@ -178,7 +178,7 @@ export async function pickVideoFromGallery(): Promise<MediaPickerResult> {
         }
 
         const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ['videos'],
+            mediaTypes: ImagePicker.MediaTypeOptions.Videos,
             allowsEditing: true,
             quality: 1,
             videoMaxDuration: 600,
@@ -231,7 +231,7 @@ export async function pickImageFromGallery(): Promise<MediaPickerResult> {
         }
 
         const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ['images'],
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
             allowsEditing: true,
             quality: 0.9,
         });
@@ -269,7 +269,7 @@ export async function pickMediaFromGallery(): Promise<MediaPickerResult> {
         }
 
         const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ['images', 'videos'],
+            mediaTypes: ImagePicker.MediaTypeOptions.All,
             allowsEditing: true,
             quality: 1,
             videoMaxDuration: 600,

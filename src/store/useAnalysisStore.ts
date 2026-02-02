@@ -26,6 +26,7 @@ interface AnalysisState {
 
     // Actions
     startAnalysis: (input: AnalysisInput) => Promise<AnalysisResult>;
+    setCurrentInput: (input: AnalysisInput) => void;
     setProgress: (progress: string) => void;
     clearCurrent: () => void;
     clearError: () => void;
@@ -50,13 +51,14 @@ export const useAnalysisStore = create<AnalysisState>()(
 
             // Start a new analysis
             startAnalysis: async (input: AnalysisInput) => {
+                const isText = input.type === 'text';
                 // Reset state and set input
                 set({
-                    status: 'uploading',
+                    status: isText ? 'processing' : 'uploading',
                     currentInput: input,
                     currentResult: null,
                     error: null,
-                    progress: 'Preparing media...',
+                    progress: isText ? 'Generating metadata...' : 'Preparing media...',
                 });
 
                 try {
@@ -94,6 +96,15 @@ export const useAnalysisStore = create<AnalysisState>()(
 
                     throw analysisError;
                 }
+            },
+
+            // Set current input without starting analysis
+            setCurrentInput: (input: AnalysisInput) => {
+                set({
+                    currentInput: input,
+                    status: 'idle',
+                    error: null
+                });
             },
 
             // Update progress message

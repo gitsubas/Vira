@@ -2,7 +2,7 @@
 // Handles media upload, analysis requests, and response parsing
 
 import * as FileSystem from 'expo-file-system/legacy';
-import { getModel, ANALYSIS_SYSTEM_PROMPT } from '../lib/gemini';
+import { getModel, ANALYSIS_SYSTEM_PROMPT, METADATA_SYSTEM_PROMPT } from '../lib/gemini';
 import {
     AnalysisInput,
     AnalysisResult,
@@ -34,12 +34,19 @@ export class GeminiService {
      * @returns Analysis result or throws AnalysisError
      */
     async analyzeMedia(input: AnalysisInput): Promise<AnalysisResult> {
+        // Handle Text-Only Input
+        if (input.type === 'text' && input.text) {
+            return this.generateMetadata(input.text);
+        }
+
         try {
             console.log('[GeminiService] Starting analysis for:', input.fileName);
             console.log('[GeminiService] URI:', input.uri);
             console.log('[GeminiService] MimeType:', input.mimeType);
 
             // Step 1: Read file as base64 directly from the URI
+            if (!input.uri) throw new Error('URI required for media analysis');
+
             console.log('[GeminiService] Reading file as base64...');
             const base64Data = await this.readFileAsBase64(input.uri);
             console.log('[GeminiService] Base64 size:', base64Data.length, 'chars');
@@ -50,18 +57,20 @@ export class GeminiService {
             const contentParts = [
                 {
                     inlineData: {
-                        mimeType: this.normalizeMimeType(input.mimeType),
+                        mimeType: this.normalizeMimeType(input.mimeType!),
                         data: base64Data,
                     },
                 },
                 { text: ANALYSIS_SYSTEM_PROMPT },
             ];
 
-            // Step 3: Generate content with timeout
+            // Step 3: Generate content with timeout & retry
             console.log('[GeminiService] Calling Gemini API...');
-            const result = await this.withTimeout(
-                model.generateContent(contentParts),
-                ANALYSIS_TIMEOUT
+            const result = await this.retryOperation(() =>
+                this.withTimeout(
+                    model.generateContent(contentParts),
+                    ANALYSIS_TIMEOUT
+                )
             );
 
             // Step 4: Extract and parse response
@@ -87,6 +96,86 @@ export class GeminiService {
         } catch (error) {
             console.error('[GeminiService] Error:', error);
             throw this.handleError(error);
+        }
+    }
+
+    /**
+     * Generate SEO metadata from a text topic
+     */
+    async generateMetadata(topic: string): Promise<AnalysisResult> {
+        try {
+            const model = getModel();
+            const prompt = `${METADATA_SYSTEM_PROMPT}\n\nTopic: ${topic}`;
+
+            const result = await this.retryOperation(() => model.generateContent(prompt));
+            const response = await result.response;
+            const text = response.text();
+            console.log('[GeminiService] Raw Metadata Response:', text);
+
+            // Extract JSON
+            let jsonText = text;
+            const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/);
+            if (jsonMatch) jsonText = jsonMatch[1];
+            const objectMatch = jsonText.match(/\{[\s\S]*\}/);
+            if (objectMatch) jsonText = objectMatch[0];
+
+            console.log('[GeminiService] Extracted JSON:', jsonText);
+            const parsed = JSON.parse(jsonText);
+
+            // Handle potential variations in response structure
+            const platforms = parsed.seo?.platforms || parsed.platforms;
+
+            // Fallback: if no platforms, check for legacy fields
+            const titles = parsed.seo?.titles || parsed.titles || [];
+            const caption = parsed.seo?.caption || parsed.caption || '';
+            const hashtags = parsed.seo?.hashtags || parsed.hashtags || [];
+
+            return {
+                id: this.generateId(),
+                createdAt: new Date().toISOString(),
+                score: 100, // Default for text gen
+                viralPotential: 'High',
+                hookStrength: 'Strong',
+                pacing: 'Optimal',
+                keywords: [topic],
+                improvements: ['Optimized for all platforms'],
+                seo: {
+                    titles: titles,
+                    caption: caption,
+                    hashtags: hashtags,
+                    filename: 'metadata_generated',
+                    platforms: platforms
+                },
+                input: {
+                    text: topic,
+                    type: 'text',
+                    fileName: topic,
+                }
+            };
+        } catch (error) {
+            console.error('[GeminiService] generateMetadata error:', error);
+            throw this.handleError(error);
+        }
+    }
+
+    /**
+     * Retry operation with exponential backoff for 429 errors
+     */
+    private async retryOperation<T>(operation: () => Promise<T>, retries = 5, delay = 2000): Promise<T> {
+        try {
+            return await operation();
+        } catch (error: any) {
+            if (retries > 0 && (
+                error.toString().includes('429') ||
+                error.message?.includes('429') ||
+                error.message?.includes('exhausted') ||
+                error.message?.includes('quota')
+            )) {
+                console.log(`[GeminiService] Rate limited (429). Retrying in ${delay}ms... (${retries} retries left)`);
+                await new Promise(resolve => setTimeout(resolve, delay));
+                return this.retryOperation(operation, retries - 1, delay * 2);
+            }
+            throw error;
         }
     }
 
@@ -156,7 +245,7 @@ export class GeminiService {
             console.log('[GeminiService] Raw response preview:', text.substring(0, 300));
 
             let jsonText = text;
-            const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/);
+            const jsonMatch = text.match(/```json\s * ([\s\S] *?) \s * ```/);
             if (jsonMatch) {
                 jsonText = jsonMatch[1];
             }
@@ -217,10 +306,10 @@ export class GeminiService {
         if (error instanceof Error) {
             const message = error.message.toLowerCase();
 
-            if (message.includes('network') || message.includes('fetch')) {
+            if (message.includes('429') || message.includes('exhausted') || message.includes('quota') || message.includes('limit')) {
                 return {
-                    type: AnalysisErrorType.NETWORK_ERROR,
-                    message: 'Network error. Check your connection.',
+                    type: AnalysisErrorType.QUOTA_EXCEEDED,
+                    message: 'Traffic limit reached. Please wait a moment.',
                     retryable: true,
                 };
             }
@@ -233,11 +322,11 @@ export class GeminiService {
                 };
             }
 
-            if (message.includes('quota') || message.includes('limit')) {
+            if (message.includes('network') || message.includes('fetch')) {
                 return {
-                    type: AnalysisErrorType.QUOTA_EXCEEDED,
-                    message: 'API quota exceeded. Try again later.',
-                    retryable: false,
+                    type: AnalysisErrorType.NETWORK_ERROR,
+                    message: 'Network error. Check your connection.',
+                    retryable: true,
                 };
             }
 

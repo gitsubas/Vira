@@ -1,10 +1,11 @@
 // RecentScanCard.tsx - Glassmorphism Recent Scan Card
-// Mockup-accurate: Stronger glass effect, visible border glow, clear thumbnail
+// Theme-aware: Adapts colors for Light/Dark modes
 
 import React from 'react';
 import { View, Text, Pressable, StyleSheet, Image, ImageSourcePropType } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { Colors } from '../constants/Colors';
+import { useThemeColors } from '../hooks/useThemeColors';
+import { Colors as StaticColors } from '../constants/Colors';
 
 interface RecentScanCardProps {
     score: number;
@@ -14,37 +15,68 @@ interface RecentScanCardProps {
 }
 
 export function RecentScanCard({ score, title, thumbnail, onPress }: RecentScanCardProps) {
+    const { colors, isDark } = useThemeColors();
+
     return (
         <Pressable
             onPress={onPress}
             style={({ pressed }) => [
                 styles.container,
                 pressed && styles.pressed,
+                { shadowColor: colors.glassBorder }
             ]}
         >
             {/* Shadow wrapper for glow effect */}
-            <View style={styles.glowWrapper}>
+            <View style={[
+                styles.glowWrapper,
+                { backgroundColor: isDark ? 'rgba(20, 20, 20, 0.6)' : 'rgba(240, 240, 245, 0.8)' }
+            ]}>
                 {/* Blur background for glass effect */}
-                <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
+                <BlurView intensity={30} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
 
                 {/* Glass base */}
-                <View style={styles.glassBase} />
+                <View style={[styles.glassBase, { backgroundColor: colors.glassLight }]} />
 
                 {/* Thumbnail (if provided) */}
                 {thumbnail && (
                     <Image source={thumbnail} style={styles.thumbnail} resizeMode="cover" />
                 )}
 
-                {/* Gradient overlay for text readability */}
-                <View style={styles.gradientOverlay} />
+                {/* Gradient overlay - Only visible if thumbnail exists or always?
+           In original design: Always on.
+           In Light mode: Should likely be lighter? 
+           For readability of WHITE text over thumbnail, we need dark gradient.
+           User requested: "white logo on dark theme, and black logo on light theme."
+           But this is user content (thumbnail).
+           Let's keep text interactions standard.
+        */}
+                <View style={[
+                    styles.gradientOverlay,
+                    { backgroundColor: isDark ? 'rgba(0, 0, 0, 0.25)' : 'rgba(255, 255, 255, 0.1)' }
+                ]} />
 
                 {/* Border with glow effect */}
-                <View style={styles.borderOverlay} />
+                <View style={[styles.borderOverlay, {
+                    borderColor: colors.glassBorder,
+                    borderTopColor: isDark ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.8)'
+                }]} />
 
                 {/* Content */}
                 <View style={styles.content}>
-                    <Text style={styles.score}>{score}</Text>
-                    <Text style={styles.title} numberOfLines={1}>{title}</Text>
+                    {/* Score Text */}
+                    <Text style={[
+                        styles.score,
+                        {
+                            color: colors.textPrimary,
+                            textShadowColor: isDark ? 'rgba(0, 0, 0, 0.5)' : 'transparent'
+                        }
+                    ]}>{score}</Text>
+
+                    {/* Title Text */}
+                    <Text style={[
+                        styles.title,
+                        { color: colors.textSecondary }
+                    ]} numberOfLines={1}>{title}</Text>
                 </View>
             </View>
         </Pressable>
@@ -53,69 +85,54 @@ export function RecentScanCard({ score, title, thumbnail, onPress }: RecentScanC
 
 const styles = StyleSheet.create({
     container: {
-        marginRight: 14,
-        // Outer shadow for glow effect - enhanced
-        shadowColor: 'rgba(255, 255, 255, 0.25)',
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 1,
         shadowRadius: 12,
-        elevation: 6,
+        elevation: 4,
     },
     pressed: {
-        opacity: 0.85,
-        transform: [{ scale: 0.97 }],
+        opacity: 0.8,
+        transform: [{ scale: 0.98 }],
     },
     glowWrapper: {
-        width: 160,
-        height: 120,
-        borderRadius: 18,
+        width: 210,
+        height: 150,
+        borderRadius: 24,
         overflow: 'hidden',
-        backgroundColor: 'rgba(30, 30, 30, 0.5)',
     },
     glassBase: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
     },
     borderOverlay: {
         ...StyleSheet.absoluteFillObject,
-        borderRadius: 18,
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.35)',
-        // Top highlight - brighter
-        borderTopColor: 'rgba(255, 255, 255, 0.5)',
+        borderRadius: 24,
+        borderWidth: 2,
         zIndex: 10,
     },
     thumbnail: {
         ...StyleSheet.absoluteFillObject,
         width: '100%',
         height: '100%',
-        opacity: 0.7,
+        opacity: 0.5,
     },
     gradientOverlay: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(0, 0, 0, 0.2)',
     },
     content: {
         flex: 1,
         justifyContent: 'flex-end',
-        padding: 14,
+        padding: 18,
         zIndex: 5,
     },
     score: {
-        color: Colors.white,
-        fontSize: 38,
+        fontSize: 48,
         fontWeight: '700',
-        lineHeight: 42,
-        // Text shadow for depth
-        textShadowColor: 'rgba(0, 0, 0, 0.6)',
-        textShadowOffset: { width: 0, height: 1 },
+        lineHeight: 54,
+        textShadowOffset: { width: 0, height: 2 },
         textShadowRadius: 4,
     },
     title: {
-        color: 'rgba(255, 255, 255, 0.8)',
-        fontSize: 12,
-        fontWeight: '500',
-        marginTop: 3,
+        fontSize: 16,
+        marginTop: 4,
     },
 });
-

@@ -42,10 +42,14 @@ export default function ProcessingScreen() {
     // Watch for completion or error
     useEffect(() => {
         if (status === 'completed' && currentResult) {
-            // Navigate to result screen
-            router.replace(`/analysis/${currentResult.id}`);
+            // Navigate based on type
+            if (currentInput?.type === 'text') {
+                router.replace(`/analysis/seo/${currentResult.id}`);
+            } else {
+                router.replace(`/analysis/${currentResult.id}`);
+            }
         }
-    }, [status, currentResult]);
+    }, [status, currentResult, currentInput]);
 
     const rotationStyle = useAnimatedStyle(() => ({
         transform: [{ rotate: `${rotation.value}deg` }],

@@ -5,9 +5,10 @@
  * Input media for analysis
  */
 export interface AnalysisInput {
-    uri: string;           // Local file path
-    type: 'video' | 'image';
-    mimeType: string;
+    uri?: string;          // Optional for text-only input
+    text?: string;         // For text-only input
+    type: 'video' | 'image' | 'text';
+    mimeType?: string;     // Optional for text-only
     fileName: string;
     duration?: number;     // Video duration in seconds
     thumbnailUri?: string; // Generated thumbnail for video
@@ -21,6 +22,19 @@ export interface SEOContent {
     caption: string;       // Ready-to-use caption
     hashtags: string[];    // Relevant hashtags
     filename: string;      // SEO-friendly filename suggestion
+    platforms?: PlatformSpecificSEO; // Platform-specific metadata
+}
+
+export interface PlatformMetadata {
+    title: string;
+    description: string;
+    tags: string[];
+}
+
+export interface PlatformSpecificSEO {
+    tiktok: PlatformMetadata;
+    instagram: PlatformMetadata;
+    youtube: PlatformMetadata;
 }
 
 /**
@@ -48,8 +62,9 @@ export interface AnalysisResult {
 
     // Original input reference
     input: {
-        uri: string;
-        type: 'video' | 'image';
+        uri?: string;
+        text?: string;
+        type: 'video' | 'image' | 'text';
         fileName: string;
         thumbnailUri?: string;
     };

@@ -13,8 +13,8 @@ const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY ||
 // Initialize the Gemini client
 export const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
-// Model configuration - use gemini-2.0-flash-lite for multimodal analysis
-export const MODEL_NAME = 'gemini-2.0-flash-lite';
+// Model configuration - using gemini-2.0-flash as it is available for this key
+export const MODEL_NAME = 'gemini-2.0-flash';
 
 // Get the generative model instance
 export function getModel() {
@@ -57,3 +57,35 @@ Be critical but constructive. Focus on:
 - Call-to-action presence
 
 Return ONLY valid JSON, no markdown formatting.`;
+
+// System prompt for text-based metadata generation
+export const METADATA_SYSTEM_PROMPT = `You are Viro, an expert social media strategist.
+
+Generate optimized SEO metadata for TikTok, Instagram Reels, and YouTube Shorts based on the user's topic.
+
+CRITICAL: Return a JSON object with this EXACT structure. Do not change keys or nesting:
+{
+  "seo": {
+    "platforms": {
+      "tiktok": {
+        "title": "<Catchy, viral hook title>",
+        "description": "<Short, trend-focused description with keywords>",
+        "tags": [<5-7 trending hashtags>]
+      },
+      "instagram": {
+        "title": "<Aesthetic/Engaging title>",
+        "description": "<Longer, value-driven caption with spacing>",
+        "tags": [<10-15 mixed niche/broad hashtags>]
+      },
+      "youtube": {
+        "title": "<Search-optimized clickbait-style title>",
+        "description": "<Detailed description with keywords + Call to Action>",
+        "tags": [<10-15 keyword-rich tags for SEO>]
+      }
+    }
+  }
+}
+
+You MUST provide content for ALL THREE platforms (tiktok, instagram, youtube).
+Focus on current trends, high-volume keywords, and platform-specific best practices.
+Return ONLY valid JSON. No markdown formatting.`;

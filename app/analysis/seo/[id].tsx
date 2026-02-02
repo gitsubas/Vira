@@ -1,7 +1,7 @@
 // app/analysis/seo/[id].tsx - Generated Content / SEO Optimization Screen
 // Displays AI-generated titles, captions, and hashtags
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -17,7 +17,7 @@ import * as Clipboard from 'expo-clipboard';
 import { Colors } from '../../../src/constants/Colors';
 import { useAnalysisStore } from '../../../src/store/useAnalysisStore';
 
-type TabType = 'titles' | 'caption' | 'hashtags';
+type TabType = 'titles' | 'caption' | 'hashtags' | 'tiktok' | 'instagram' | 'youtube';
 
 export default function SEOScreen() {
     const router = useRouter();
@@ -25,8 +25,17 @@ export default function SEOScreen() {
     const getResultById = useAnalysisStore((state) => state.getResultById);
     const result = id ? getResultById(id) : null;
 
-    const [activeTab, setActiveTab] = useState<TabType>('titles');
+    console.log('[SEOScreen] Render', { id, resultFound: !!result, hasSeo: !!result?.seo });
+    if (result?.seo) {
+        console.log('[SEOScreen] Platforms keys:', Object.keys(result.seo.platforms || {}));
+    }
+
+    const [activeTab, setActiveTab] = useState<TabType>('tiktok');
     const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+
+    // Platform tabs logic - Derived state
+    const { seo } = result || {};
+
 
     // Handle back
     const handleBack = () => {
@@ -47,7 +56,7 @@ export default function SEOScreen() {
         Alert.alert('Copied!', 'All hashtags copied to clipboard');
     };
 
-    if (!result) {
+    if (!result || !seo) {
         return (
             <SafeAreaView style={styles.container}>
                 <View style={styles.errorContainer}>
@@ -60,13 +69,25 @@ export default function SEOScreen() {
         );
     }
 
-    const { seo } = result;
+    // Platform tabs logic
+    // (Logic moved to tabs definition)
 
-    // Tab button component
-    const TabButton = ({ tab, label, icon: Icon }: { tab: TabType; label: string; icon: any }) => (
+    // Tab definitions
+    // Tab definitions - Always these 3 platforms
+    const tabs: TabType[] = ['tiktok', 'instagram', 'youtube'];
+
+    // Reset active tab if switching between modes (though usually fresh mount)
+    // We handle this by initializing correctly or checking valid tab
+
+    // Tab button component (enhanced for platform support)
+    const TabButton = ({ tab, label, icon: Icon }: { tab: string; label: string; icon: any }) => (
         <Pressable
-            style={[styles.tabButton, activeTab === tab && styles.tabButtonActive]}
-            onPress={() => setActiveTab(tab)}
+            style={[
+                styles.tabButton,
+                activeTab === tab && styles.tabButtonActive,
+                activeTab === tab && styles.tabButtonActive,
+            ]}
+            onPress={() => setActiveTab(tab as any)}
         >
             <Icon size={18} color={activeTab === tab ? Colors.white : Colors.textMuted} />
             <Text style={[styles.tabLabel, activeTab === tab && styles.tabLabelActive]}>
@@ -74,6 +95,63 @@ export default function SEOScreen() {
             </Text>
         </Pressable>
     );
+
+    // Render Platform Specific Content
+    const renderPlatformContent = (platform: 'tiktok' | 'instagram' | 'youtube') => {
+        const data = seo.platforms?.[platform];
+        if (!data) return <Text style={styles.noContent}>No data for {platform}</Text>;
+
+        return (
+            <View style={styles.section}>
+                <Text style={styles.sectionTitle}>{platform.charAt(0).toUpperCase() + platform.slice(1)} Optimization</Text>
+
+                {/* Title */}
+                <View style={styles.cardGroup}>
+                    <Text style={styles.cardLabel}>Title</Text>
+                    <View style={styles.itemCard}>
+                        <Text style={styles.itemText}>{data.title}</Text>
+                        <Pressable style={styles.copyButton} onPress={() => handleCopy(data.title, 1)}>
+                            {copiedIndex === 1 ? <Check size={18} color={Colors.viroCyan} /> : <Copy size={18} color={Colors.textMuted} />}
+                        </Pressable>
+                    </View>
+                </View>
+
+                {/* Description */}
+                <View style={styles.cardGroup}>
+                    <Text style={styles.cardLabel}>Description/Caption</Text>
+                    <View style={styles.captionCard}>
+                        <View style={styles.captionHeader}>
+                            <Text style={styles.captionText}>{data.description}</Text>
+                            <Pressable style={styles.copyButton} onPress={() => handleCopy(data.description, 2)}>
+                                {copiedIndex === 2 ? <Check size={18} color={Colors.viroCyan} /> : <Copy size={18} color={Colors.textMuted} />}
+                            </Pressable>
+                        </View>
+                    </View>
+                </View>
+
+                {/* Tags */}
+                <View style={styles.cardGroup}>
+                    <View style={styles.hashtagsHeader}>
+                        <Text style={styles.cardLabel}>Tags</Text>
+                        <Pressable style={styles.copyButton} onPress={() => {
+                            Clipboard.setStringAsync(data.tags.join(' '));
+                            Alert.alert('Copied', 'All tags copied');
+                        }}>
+                            <Copy size={18} color={Colors.textMuted} />
+                        </Pressable>
+                    </View>
+                    <View style={styles.hashtagsCloud}>
+                        {data.tags.map((tag, idx) => (
+                            <Pressable key={idx} style={styles.hashtagChip} onPress={() => handleCopy(tag, 100 + idx)}>
+                                <Text style={styles.hashtagText}>{tag}</Text>
+                                {copiedIndex === 100 + idx && <Check size={14} color={Colors.viroCyan} style={{ marginLeft: 4 }} />}
+                            </Pressable>
+                        ))}
+                    </View>
+                </View>
+            </View>
+        );
+    };
 
     return (
         <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -86,11 +164,11 @@ export default function SEOScreen() {
                 <View style={styles.headerButton} />
             </View>
 
-            {/* Tabs */}
+            {/* Tabs - Always show platform options if we have a result */}
             <View style={styles.tabsContainer}>
-                <TabButton tab="titles" label="Titles" icon={Type} />
-                <TabButton tab="caption" label="Caption" icon={MessageSquare} />
-                <TabButton tab="hashtags" label="Hashtags" icon={Hash} />
+                <TabButton tab="tiktok" label="TikTok" icon={Hash} />
+                <TabButton tab="instagram" label="Instagram" icon={MessageSquare} />
+                <TabButton tab="youtube" label="YouTube" icon={Type} />
             </View>
 
             {/* Content */}
@@ -99,129 +177,8 @@ export default function SEOScreen() {
                 contentContainerStyle={styles.contentContainer}
                 showsVerticalScrollIndicator={false}
             >
-                {/* Titles Tab */}
-                {activeTab === 'titles' && (
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Suggested Titles</Text>
-                        <Text style={styles.sectionSubtitle}>
-                            AI-generated titles optimized for engagement
-                        </Text>
-
-                        {seo?.titles?.length ? (
-                            seo.titles.map((title, index) => (
-                                <View key={index} style={styles.itemCard}>
-                                    <Text style={styles.itemText}>{title}</Text>
-                                    <Pressable
-                                        style={styles.copyButton}
-                                        onPress={() => handleCopy(title, index)}
-                                    >
-                                        {copiedIndex === index ? (
-                                            <Check size={18} color={Colors.viroCyan} />
-                                        ) : (
-                                            <Copy size={18} color={Colors.textMuted} />
-                                        )}
-                                    </Pressable>
-                                </View>
-                            ))
-                        ) : (
-                            <Text style={styles.noContent}>No titles generated</Text>
-                        )}
-                    </View>
-                )}
-
-                {/* Caption Tab */}
-                {activeTab === 'caption' && (
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Optimized Caption</Text>
-                        <Text style={styles.sectionSubtitle}>
-                            Ready-to-use caption with keywords and hooks
-                        </Text>
-
-                        {seo?.caption ? (
-                            <View style={styles.captionCard}>
-                                <Text style={styles.captionText}>{seo.caption}</Text>
-                                <View style={styles.captionActions}>
-                                    <Pressable
-                                        style={styles.actionButton}
-                                        onPress={() => handleCopy(seo.caption, -1)}
-                                    >
-                                        {copiedIndex === -1 ? (
-                                            <>
-                                                <Check size={18} color={Colors.viroCyan} />
-                                                <Text style={[styles.actionButtonText, { color: Colors.viroCyan }]}>
-                                                    Copied
-                                                </Text>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Copy size={18} color={Colors.white} />
-                                                <Text style={styles.actionButtonText}>Copy</Text>
-                                            </>
-                                        )}
-                                    </Pressable>
-                                </View>
-                            </View>
-                        ) : (
-                            <Text style={styles.noContent}>No caption generated</Text>
-                        )}
-                    </View>
-                )}
-
-                {/* Hashtags Tab */}
-                {activeTab === 'hashtags' && (
-                    <View style={styles.section}>
-                        <View style={styles.hashtagsHeader}>
-                            <View>
-                                <Text style={styles.sectionTitle}>Trending Hashtags</Text>
-                                <Text style={styles.sectionSubtitle}>
-                                    Optimized for discoverability
-                                </Text>
-                            </View>
-                            {seo?.hashtags?.length > 0 && (
-                                <Pressable style={styles.copyAllButton} onPress={handleCopyAllHashtags}>
-                                    <Copy size={16} color={Colors.white} />
-                                    <Text style={styles.copyAllText}>Copy All</Text>
-                                </Pressable>
-                            )}
-                        </View>
-
-                        {seo?.hashtags?.length ? (
-                            <View style={styles.hashtagsCloud}>
-                                {seo.hashtags.map((tag, index) => (
-                                    <Pressable
-                                        key={index}
-                                        style={styles.hashtagChip}
-                                        onPress={() => handleCopy(tag, index + 100)}
-                                    >
-                                        <Text style={styles.hashtagText}>{tag}</Text>
-                                        {copiedIndex === index + 100 && (
-                                            <Check size={14} color={Colors.viroCyan} />
-                                        )}
-                                    </Pressable>
-                                ))}
-                            </View>
-                        ) : (
-                            <Text style={styles.noContent}>No hashtags generated</Text>
-                        )}
-                    </View>
-                )}
-
-                {/* Suggested Filename */}
-                {seo?.filename && (
-                    <View style={styles.filenameSection}>
-                        <Text style={styles.filenameLabel}>SEO Filename</Text>
-                        <View style={styles.filenameCard}>
-                            <Text style={styles.filenameText}>{seo.filename}</Text>
-                            <Pressable onPress={() => handleCopy(seo.filename!, -2)}>
-                                {copiedIndex === -2 ? (
-                                    <Check size={18} color={Colors.viroCyan} />
-                                ) : (
-                                    <Copy size={18} color={Colors.textMuted} />
-                                )}
-                            </Pressable>
-                        </View>
-                    </View>
-                )}
+                {/* Render content based on active tab */}
+                {renderPlatformContent(activeTab as 'tiktok' | 'instagram' | 'youtube')}
             </ScrollView>
         </SafeAreaView>
     );
@@ -294,11 +251,6 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         marginBottom: 4,
     },
-    sectionSubtitle: {
-        color: Colors.textMuted,
-        fontSize: 14,
-        marginBottom: 16,
-    },
     itemCard: {
         flexDirection: 'row',
         alignItems: 'flex-start',
@@ -325,6 +277,11 @@ const styles = StyleSheet.create({
         padding: 20,
         borderWidth: 1,
         borderColor: 'rgba(255, 255, 255, 0.08)',
+    },
+    captionHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
     },
     captionText: {
         color: Colors.white,
@@ -391,29 +348,6 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '500',
     },
-    filenameSection: {
-        marginTop: 8,
-    },
-    filenameLabel: {
-        color: Colors.textMuted,
-        fontSize: 14,
-        marginBottom: 8,
-    },
-    filenameCard: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-        borderRadius: 12,
-        padding: 16,
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.08)',
-    },
-    filenameText: {
-        flex: 1,
-        color: Colors.white,
-        fontSize: 14,
-        fontFamily: 'monospace',
-    },
     noContent: {
         color: Colors.textMuted,
         fontSize: 15,
@@ -441,4 +375,16 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
     },
+    // New Styles
+    cardGroup: {
+        marginBottom: 16,
+    },
+    cardLabel: {
+        color: Colors.textMuted,
+        fontSize: 12,
+        marginBottom: 6,
+        marginLeft: 4,
+        textTransform: 'uppercase',
+        letterSpacing: 1,
+    }
 });

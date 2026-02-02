@@ -1,11 +1,11 @@
 // QuickAction.tsx - Glassmorphism Quick Action Buttons
-// Mockup-accurate: Stronger glass effect, more visible border
+// Theme-aware: Adapts colors for Light/Dark modes
 
 import React from 'react';
 import { Text, Pressable, StyleSheet, View } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { LucideIcon } from 'lucide-react-native';
-import { Colors } from '../constants/Colors';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 interface QuickActionProps {
     icon: LucideIcon;
@@ -14,6 +14,8 @@ interface QuickActionProps {
 }
 
 export function QuickAction({ icon: Icon, label, onPress }: QuickActionProps) {
+    const { colors, isDark } = useThemeColors();
+
     return (
         <Pressable
             onPress={onPress}
@@ -22,14 +24,19 @@ export function QuickAction({ icon: Icon, label, onPress }: QuickActionProps) {
                 pressed && styles.pressed,
             ]}
         >
-            <View style={styles.iconContainer}>
-                <BlurView intensity={35} tint="dark" style={StyleSheet.absoluteFill} />
-                {/* Stronger border with subtle glow */}
-                <View style={styles.borderOverlay} />
-                <View style={styles.innerGlow} />
-                <Icon size={20} color={Colors.white} strokeWidth={1.5} />
+            <View style={[styles.iconContainer, { backgroundColor: colors.glassLight }]}>
+                <BlurView intensity={35} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+
+                {/* Border Overlay */}
+                <View style={[styles.borderOverlay, { borderColor: colors.glassBorder }]} />
+
+                {/* Inner Glow/Highlight */}
+                <View style={[styles.innerGlow, { borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]} />
+
+                {/* Icon Color - Dynamic */}
+                <Icon size={30} color={colors.textPrimary} strokeWidth={2} />
             </View>
-            <Text style={styles.label}>{label}</Text>
+            <Text style={[styles.label, { color: colors.textMuted }]}>{label}</Text>
         </Pressable>
     );
 }
@@ -43,37 +50,32 @@ const styles = StyleSheet.create({
         opacity: 0.7,
     },
     iconContainer: {
-        width: 52,
-        height: 52,
-        borderRadius: 26,
+        width: 78,
+        height: 78,
+        borderRadius: 39,
         overflow: 'hidden',
-        backgroundColor: 'rgba(255, 255, 255, 0.08)', // Slightly more visible glass
         justifyContent: 'center',
         alignItems: 'center',
-        // Subtle shadow for depth
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.2,
+        shadowRadius: 6,
         elevation: 4,
     },
     borderOverlay: {
         ...StyleSheet.absoluteFillObject,
-        borderRadius: 26,
-        borderWidth: 1.5, // Thicker border
-        borderColor: 'rgba(255, 255, 255, 0.25)', // More visible border
+        borderRadius: 39,
+        borderWidth: 2,
     },
     innerGlow: {
         ...StyleSheet.absoluteFillObject,
-        borderRadius: 26,
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.08)',
-        margin: 2,
+        borderRadius: 39,
+        borderWidth: 1.5,
+        margin: 3,
     },
     label: {
-        color: Colors.textMuted,
-        fontSize: 12,
-        marginTop: 10,
+        fontSize: 18,
+        marginTop: 15,
         fontWeight: '400',
     },
 });

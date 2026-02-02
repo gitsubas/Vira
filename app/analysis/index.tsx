@@ -208,8 +208,6 @@ function OptionCard({ icon, title, subtitle, onPress, disabled, primary }: Optio
                 disabled && styles.optionCardDisabled,
             ]}
         >
-            <BlurView intensity={25} tint="dark" style={StyleSheet.absoluteFill} />
-            <View style={styles.optionCardBorder} />
             <View style={styles.optionCardContent}>
                 <View style={styles.optionIcon}>{icon}</View>
                 <View style={styles.optionText}>
@@ -250,16 +248,21 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingHorizontal: 20,
         paddingTop: 20,
-        gap: 16,
     },
     optionCard: {
-        height: 90,
-        borderRadius: 20,
+        width: '100%',
+        height: 100,
+        marginBottom: 16,
+        borderRadius: 24,
         overflow: 'hidden',
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.1)',
     },
     optionCardPrimary: {
-        height: 100,
+        // No extra height needed, uniform look is safer
+        backgroundColor: 'rgba(255, 255, 255, 0.12)',
+        borderColor: 'rgba(255, 255, 255, 0.2)',
     },
     optionCardPressed: {
         opacity: 0.8,
@@ -269,17 +272,14 @@ const styles = StyleSheet.create({
         opacity: 0.5,
     },
     optionCardBorder: {
-        ...StyleSheet.absoluteFillObject,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.12)',
+        // Redundant with container border, removed to simplify
+        display: 'none',
     },
     optionCardContent: {
         flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 20,
-        zIndex: 1,
+        paddingHorizontal: 24, // More padding
     },
     optionIcon: {
         width: 56,
@@ -288,19 +288,21 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(255, 255, 255, 0.1)',
         justifyContent: 'center',
         alignItems: 'center',
+        marginRight: 20, // Explicit margin instead of gap
     },
     optionText: {
-        marginLeft: 16,
+        flex: 1,
+        justifyContent: 'center',
     },
     optionTitle: {
         color: Colors.white,
         fontSize: 18,
         fontWeight: '600',
+        marginBottom: 4,
     },
     optionSubtitle: {
         color: Colors.textMuted,
         fontSize: 14,
-        marginTop: 2,
     },
     helperText: {
         color: Colors.textMuted,
@@ -308,5 +310,6 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         paddingHorizontal: 40,
         paddingBottom: 40,
+        marginTop: 20,
     },
 });

@@ -1,19 +1,24 @@
 // (tabs)/profile.tsx - Profile/Settings Screen
-// User profile, subscription management, and settings
+// Added Theme Toggle
 
 import React, { useCallback } from 'react';
-import { View, Text, StyleSheet, Pressable, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Alert, ActivityIndicator, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { User, Crown, Settings, HelpCircle, RefreshCw, CreditCard } from 'lucide-react-native';
+import { User, Crown, Settings, HelpCircle, RefreshCw, CreditCard, Moon, Sun } from 'lucide-react-native';
 import { GlassView } from '../../src/components/GlassView';
 import { Colors } from '../../src/constants/Colors';
 import { useSubscriptionStore } from '../../src/store/useSubscriptionStore';
 import { SubscriptionTier, TIER_CONFIGS } from '../../src/types/subscription';
 import { presentCustomerCenter } from '../../src/services/PaywallService';
+import { useThemeStore } from '../../src/store/useThemeStore';
+import { useThemeColors } from '../../src/hooks/useThemeColors';
 
 export default function ProfileScreen() {
     const router = useRouter();
+    const { colors, isDark } = useThemeColors();
+    const { toggleTheme } = useThemeStore();
+
     const {
         tier,
         isActive,
@@ -55,7 +60,6 @@ export default function ProfileScreen() {
         }
     }, [restoreUserPurchases]);
 
-    // Get tier display info
     const getTierDisplayName = () => {
         switch (tier) {
             case SubscriptionTier.ENTERPRISE:
@@ -74,24 +78,24 @@ export default function ProfileScreen() {
             case SubscriptionTier.PRO:
                 return Colors.viroPink;
             default:
-                return Colors.textMuted;
+                return colors.textMuted;
         }
     };
 
     return (
-        <SafeAreaView style={styles.container} edges={['top']}>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
             <View style={styles.header}>
-                <Text style={styles.title}>Profile</Text>
+                <Text style={[styles.title, { color: colors.textPrimary }]}>Profile</Text>
             </View>
 
             <View style={styles.content}>
                 {/* User Info */}
                 <GlassView style={styles.userCard}>
-                    <View style={styles.avatar}>
-                        <User size={32} color={Colors.white} />
+                    <View style={[styles.avatar, { borderColor: colors.glassBorder, backgroundColor: colors.glassLight }]}>
+                        <User size={32} color={colors.textPrimary} />
                     </View>
                     <View style={styles.userInfo}>
-                        <Text style={styles.userName}>Vira User</Text>
+                        <Text style={[styles.userName, { color: colors.textPrimary }]}>Vira User</Text>
                         <Text style={[styles.userPlan, { color: getTierColor() }]}>
                             {getTierDisplayName()}
                         </Text>
@@ -101,30 +105,46 @@ export default function ProfileScreen() {
                     )}
                 </GlassView>
 
+                {/* Appearance Toggle */}
+                <GlassView style={styles.appearanceCard}>
+                    <View style={styles.appearanceRow}>
+                        <View style={styles.appearanceLabelContainer}>
+                            {isDark ? <Moon size={20} color={colors.textPrimary} /> : <Sun size={20} color={colors.textPrimary} />}
+                            <Text style={[styles.appearanceLabel, { color: colors.textPrimary }]}>Dark Mode</Text>
+                        </View>
+                        <Switch
+                            value={isDark}
+                            onValueChange={toggleTheme}
+                            trackColor={{ false: '#767577', true: Colors.viroPink }}
+                            thumbColor={Colors.white}
+                        />
+                    </View>
+                </GlassView>
+
                 {/* Stats */}
                 <View style={styles.statsRow}>
                     <GlassView style={styles.statCard}>
-                        <Text style={styles.statValue}>{usage.analysesThisMonth}</Text>
-                        <Text style={styles.statLabel}>Scans this month</Text>
+                        <Text style={[styles.statValue, { color: colors.textPrimary }]}>{usage.analysesThisMonth}</Text>
+                        <Text style={[styles.statLabel, { color: colors.textMuted }]}>Scans this month</Text>
                     </GlassView>
                     <GlassView style={styles.statCard}>
                         <Text style={[styles.statValue, { color: remainingAnalyses > 0 ? Colors.viroCyan : Colors.viroPink }]}>
                             {remainingAnalyses === Infinity ? '∞' : remainingAnalyses}
                         </Text>
-                        <Text style={styles.statLabel}>Remaining</Text>
+                        <Text style={[styles.statLabel, { color: colors.textMuted }]}>Remaining</Text>
                     </GlassView>
                 </View>
 
                 {/* Subscription Limits */}
                 <GlassView style={styles.limitsCard}>
-                    <Text style={styles.limitsTitle}>Your Plan Limits</Text>
-                    <View style={styles.limitRow}>
-                        <Text style={styles.limitLabel}>Monthly Analyses</Text>
-                        <Text style={styles.limitValue}>{tierConfig.monthlyLimit}</Text>
+                    <Text style={[styles.limitsTitle, { color: colors.textPrimary }]}>Your Plan Limits</Text>
+                    <View style={[styles.limitRow, { borderBottomColor: colors.glassBorder }]}>
+                        <Text style={[styles.limitLabel, { color: colors.textMuted }]}>Monthly Analyses</Text>
+                        <Text style={[styles.limitValue, { color: colors.textPrimary }]}>{tierConfig.monthlyLimit}</Text>
                     </View>
-                    <View style={styles.limitRow}>
-                        <Text style={styles.limitLabel}>Max Video Duration</Text>
-                        <Text style={styles.limitValue}>
+                    <View style={styles.limitRowNoBorder}>
+                        <Text style={[styles.limitLabel, { color: colors.textMuted }]}>Max Video Duration</Text>
+                        <Text style={[styles.limitValue, { color: colors.textPrimary }]}>
                             {tierConfig.maxVideoDuration >= 60
                                 ? `${Math.floor(tierConfig.maxVideoDuration / 60)} min`
                                 : `${tierConfig.maxVideoDuration} sec`}
@@ -141,12 +161,14 @@ export default function ProfileScreen() {
                             label="Upgrade to Vira Pro"
                             onPress={handleUpgrade}
                             highlight
+                            colors={colors}
                         />
                     ) : (
                         <MenuItem
                             icon={CreditCard}
                             label="Manage Subscription"
                             onPress={handleManageSubscription}
+                            colors={colors}
                         />
                     )}
 
@@ -154,18 +176,21 @@ export default function ProfileScreen() {
                         icon={RefreshCw}
                         label="Restore Purchases"
                         onPress={handleRestore}
+                        colors={colors}
                     />
 
                     <MenuItem
                         icon={Settings}
                         label="Settings"
                         onPress={() => {/* TODO: Navigate to settings */ }}
+                        colors={colors}
                     />
 
                     <MenuItem
                         icon={HelpCircle}
                         label="Help & Support"
                         onPress={() => {/* TODO: Navigate to help */ }}
+                        colors={colors}
                     />
                 </View>
             </View>
@@ -178,16 +203,29 @@ function MenuItem({
     label,
     onPress,
     highlight,
+    colors
 }: {
     icon: any;
     label: string;
     onPress?: () => void;
     highlight?: boolean;
+    colors: any;
 }) {
     return (
-        <Pressable style={[styles.menuItem, highlight && styles.menuItemHighlight]} onPress={onPress}>
-            <Icon size={20} color={highlight ? Colors.viroPink : Colors.white} />
-            <Text style={[styles.menuLabel, highlight && styles.menuLabelHighlight]}>{label}</Text>
+        <Pressable
+            style={[
+                styles.menuItem,
+                { backgroundColor: colors.glassLight, borderColor: colors.glassBorder },
+                highlight && styles.menuItemHighlight
+            ]}
+            onPress={onPress}
+        >
+            <Icon size={20} color={highlight ? Colors.viroPink : colors.textPrimary} />
+            <Text style={[
+                styles.menuLabel,
+                { color: colors.textPrimary },
+                highlight && styles.menuLabelHighlight
+            ]}>{label}</Text>
         </Pressable>
     );
 }
@@ -195,14 +233,12 @@ function MenuItem({
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: Colors.black,
     },
     header: {
         paddingHorizontal: 20,
         paddingVertical: 16,
     },
     title: {
-        color: Colors.white,
         fontSize: 28,
         fontWeight: '700',
     },
@@ -220,24 +256,39 @@ const styles = StyleSheet.create({
         width: 56,
         height: 56,
         borderRadius: 28,
-        backgroundColor: Colors.glassLight,
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: Colors.glassBorder,
     },
     userInfo: {
         flex: 1,
         marginLeft: 16,
     },
     userName: {
-        color: Colors.white,
         fontSize: 18,
         fontWeight: '600',
     },
     userPlan: {
         fontSize: 14,
         marginTop: 2,
+    },
+    appearanceCard: {
+        padding: 16,
+        marginBottom: 16,
+    },
+    appearanceRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    appearanceLabelContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    appearanceLabel: {
+        fontSize: 16,
+        fontWeight: '500',
     },
     statsRow: {
         flexDirection: 'row',
@@ -250,12 +301,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     statValue: {
-        color: Colors.white,
         fontSize: 28,
         fontWeight: '700',
     },
     statLabel: {
-        color: Colors.textMuted,
         fontSize: 12,
         marginTop: 4,
         textAlign: 'center',
@@ -265,7 +314,6 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     limitsTitle: {
-        color: Colors.white,
         fontSize: 14,
         fontWeight: '600',
         marginBottom: 12,
@@ -275,14 +323,16 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingVertical: 8,
         borderBottomWidth: 1,
-        borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+    },
+    limitRowNoBorder: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        paddingVertical: 8,
     },
     limitLabel: {
-        color: Colors.textMuted,
         fontSize: 14,
     },
     limitValue: {
-        color: Colors.white,
         fontSize: 14,
         fontWeight: '600',
     },
@@ -294,17 +344,14 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: 16,
         paddingHorizontal: 16,
-        backgroundColor: Colors.glassLight,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: Colors.glassBorder,
     },
     menuItemHighlight: {
         borderColor: Colors.viroPink,
         backgroundColor: 'rgba(233, 30, 99, 0.1)',
     },
     menuLabel: {
-        color: Colors.white,
         fontSize: 16,
         marginLeft: 12,
     },

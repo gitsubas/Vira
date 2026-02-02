@@ -75,7 +75,7 @@ export default function SplashScreen() {
             {/* Tagline */}
             <Animated.Text
                 style={taglineAnimatedStyle}
-                className="text-zinc-500 text-sm mt-8 tracking-wide"
+                className="text-gray-500 text-sm mt-8 tracking-wide"
             >
                 Powered by Gemini AI
             </Animated.Text>
